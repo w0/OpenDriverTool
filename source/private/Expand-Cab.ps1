@@ -23,6 +23,7 @@ function Expand-Cab {
             Wait         = $true
             ArgumentList = @(
                 '-R',
+                '-F:*',
                 "$($Path.FullName)",
                 "$($DestinationPath.FullName)"
             )

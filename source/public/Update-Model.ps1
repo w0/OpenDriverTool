@@ -24,6 +24,39 @@ function Update-Model {
 
     )
 
+    function extract {
+        param (
+            $DriverFile
+        )
+
+        $ExtractDir = Join-Path $WorkingDir (New-Guid).Guid
+
+        New-Item $ExtractDir -ItemType Directory -ErrorAction Stop | Out-Null
+
+        switch ($DriverFile.Extension) {
+            '.exe' {
+                Start-Process -FilePath $DriverFile -ArgumentList ('/s /e="{0}"' -f $ExtractDir) -Wait; break
+            }
+            '.cab' {
+                Expand-Cab -Path $DriverFile -Destination $ExtractDir; break
+            }
+            default { throw 'unhandled file extension {0}. unable to extract drivers.' -f $_ }
+        }
+
+        $ExtractDir
+
+    }
+
+    function compress {
+        param (
+            $Content
+        )
+
+        $Child = Get-ChildItem $Content
+
+        Compress-Archive -Path $Child -DestinationPath $Content\DriverPackage.zip -PassThru
+
+    }
 
     if (-not $WorkingDir) {
         $WorkingDir = ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "OpenDriverTool"))
@@ -54,5 +87,15 @@ function Update-Model {
 
     $BIOSFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $BIOS.path) -Destination $WorkingDir -Hash $BIOS.hashMD5 -Algorithm MD5
     $DriverFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $Driver.path) -Destination $WorkingDir -Hash $Drivers.hashMD5 -Algorithm MD5
+
+    $ExtractedContent = extract $DriverFile
+
+    $Archive = compress $ExtractedContent
+
+    $RemoteDir = Join-Path $ContentShare $DriverFile.BaseName
+
+    New-Item $RemoteDir -ItemType Directory -ErrorAction Stop | Out-Null
+
+    Copy-Item -Path $Archive -Destination $RemoteDir
 
 }
