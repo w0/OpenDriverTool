@@ -2,15 +2,16 @@ function Update-Model {
     [CmdletBinding()]
     param (
 
-        [Parameter()]
+        [Parameter(Mandatory)]
         [string]
         $Make,
 
-        [Parameter()]
+        [Parameter(Mandatory)]
         [string]
         $Model,
 
-        [Parameter()]
+        [Parameter(Mandatory)]
+        [ValidateSet('Windows 10', 'Windows 11')]
         [string]
         $OSVersion,
 
@@ -18,10 +19,21 @@ function Update-Model {
         [io.directoryInfo]
         $WorkingDir,
 
-        [Parameter()]
+        [Parameter(Mandatory)]
         [io.directoryInfo]
-        $ContentShare
+        $ContentShare,
 
+        [Parameter(Mandatory)]
+        [string]
+        $SiteCode,
+
+        [Parameter(Mandatory)]
+        [string]
+        $SiteServerFQDN,
+
+        [Parameter(Mandatory)]
+        [string[]]
+        $DistributionPoints
     )
 
     function extract {
@@ -58,13 +70,61 @@ function Update-Model {
 
     }
 
-    if (-not $WorkingDir) {
-        $WorkingDir = ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "OpenDriverTool"))
+    function path_creator {
+        param (
+            $Parent,
+            $Array
+        )
+
+        $Path =  Join-Path $Parent ($Array -join '\')
+
+        if (-not (Test-Path $Path)) {
+            New-Item $Path -ItemType Directory -ErrorAction SilentlyContinue
+            return
+        }
+
+        [io.directoryinfo] $Path
     }
 
-    New-Item $WorkingDir -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+    function connect {
+        param (
+            $SiteCode,
+            $SiteServerFQDN
+        )
+        
+        try {
+            Import-Module (Join-Path (Split-Path $env:SMS_ADMIN_UI_PATH -Parent) 'ConfigurationManager.psd1')
+        } catch {
+            throw 'The specified module ''ConfigurationManager'' was not loaded because no valid module file was found. Is the admin console installed?'
+        }
 
-    New-Item $WorkingDir\Content -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+        if (-not (Get-PSDrive -Name $SiteCode -ErrorAction SilentlyContinue)) {
+            New-PSDrive -Name $SiteCode -PSProvider "CMSite" -Root $SiteServerFQDN -Description "SCCM Site" | Out-Null
+        }
+
+    }
+
+    function check_site {
+        param (
+            $Package
+        )
+
+        Get-CMPackage -Name $Package.Name -Fast | Where-Object Version -EQ $Package.Version
+        
+    }
+
+    function clean_temp {
+        Remove-Item -Path $ExtractedContent -Recurse -Force
+        Remove-Item -Path $DriverFile -Force
+        Remove-Item -Path (Split-Path $Flash64Extract -Parent) -Recurse -Force
+        Remove-Item -Path $BIOSFile -Force
+    }
+
+    if (-not $WorkingDir) {
+        $WorkingDir = path_creator $env:TEMP 'OpenDriverTool'
+    }
+
+    path_creator $WorkingDir 'Content' | Out-Null
     
     $DellCatalog = Get-DellCatalog
 
@@ -81,21 +141,81 @@ function Update-Model {
     [xml] $DriverPackCatalog = Get-Content -Path "$WorkingDir\Content\DriverPackCatalog.xml"
     [xml] $CatalogPC = Get-Content -Path "$WorkingDir\Content\CatalogPC.xml"
 
-    $Driver = Find-DellDrivers -DriverPackCatalog $DriverPackCatalog -Model $Model -OSVersion $OSVersion
+    $Driver = Find-DellDrivers -DriverPackCatalog $DriverPackCatalog -Model $Model -OSVersion ($OSVersion -replace '\s', '')
 
     $BIOS = Find-DellBIOS -Model $Model -DriverPackCatalog $DriverPackCatalog -CatalogPC $CatalogPC
 
     $BIOSFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $BIOS.path) -Destination $WorkingDir -Hash $BIOS.hashMD5 -Algorithm MD5
     $DriverFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $Driver.path) -Destination $WorkingDir -Hash $Drivers.hashMD5 -Algorithm MD5
+    $Flash64Zip = Get-RemoteFile -Url 'https://downloads.dell.com/FOLDER08405216M/1/Ver3.3.16.zip' -Destination $WorkingDir
+
+    $Flash64Extract = Expand-Archive -Path $Flash64Zip -DestinationPath $WorkingDir -PassThru | Where-Object Name -eq 'Flash64W.exe'
 
     $ExtractedContent = extract $DriverFile
 
     $Archive = compress $ExtractedContent
 
-    $RemoteDir = Join-Path $ContentShare $DriverFile.BaseName
+    $DriverPath = (
+        $Make,
+        $Model,
+        'Driver',
+        $OSVersion,
+        $Driver.dellVersion
+    )
 
-    New-Item $RemoteDir -ItemType Directory -ErrorAction Stop | Out-Null
+    $DriverContent = path_creator $ContentShare $DriverPath
 
-    Copy-Item -Path $Archive -Destination $RemoteDir
+    Copy-Item -Path $Archive -Destination $DriverContent
 
+    $BIOSPath = (
+        $Make,
+        $Model,
+        'BIOS',
+        $BIOS.dellVersion
+    )
+
+    $BIOSContent = path_creator $ContentShare $BIOSPath
+
+    Copy-Item -Path $BIOSFile -Destination $BIOSContent
+    Copy-Item -Path $Flash64Extract -Destination $BIOSContent
+
+    $DriverPackage = @{
+        Name = 'Drivers - {0} {1} - {2} {3}' -f $Make, $Model, $OSVersion, $Driver.SupportedOperatingSystems.OperatingSystem.osArch
+        Version = $Driver.dellVersion
+        Manufacturer = $Make
+        Description = '(Models included:{0})' -f ($Driver.SupportedSystems.brand.model.systemID -join ';')
+        Path = $DriverContent
+    }
+
+    $BIOSPackage = @{
+        Name = 'BIOS Update - {0} {1}' -f $Make, $Model
+        Manufacturer = $Make
+        Version = $BIOS.dellVersion
+        Description = '(Models included:{0})' -f ($BIOS.SupportedSystems.Brand.Model.systemID -join ';')
+        Path = $BIOSContent
+    }
+
+    connect $SiteCode $SiteServerFQDN
+
+    Push-Location ('{0}:' -f $SiteCode)
+
+    if (-not (check_site $DriverPackage)) {
+        $DriverCM = New-CMPackage @DriverPackage
+        $DriverCM | Move-CMObject -FolderPath ('{0}:\Package\Driver Packages\{1}' -f $SiteCode, $Make)
+        Set-CMPackage -InputObject $DriverCM -EnableBinaryDeltaReplication $true
+
+        Start-CMContentDistribution -InputObject $DriverCM -DistributionPointName $DistributionPoints
+    }
+
+    if (-not (check_site $BIOSPackage)) {
+        $BIOSCM = New-CMPackage @BIOSPackage
+        $BIOSCM | Move-CMObject -FolderPath ('{0}:\Package\BIOS Packages\{1}' -f $SiteCode, $Make)
+        Set-CMPackage -InputObject $BIOSCM -EnableBinaryDeltaReplication $true
+
+        Start-CMContentDistribution -InputObject $BIOSCM -DistributionPointName $DistributionPoints
+    }
+
+    Pop-Location
+
+    clean_temp
 }
