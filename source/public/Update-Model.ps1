@@ -3,6 +3,7 @@ function Update-Model {
     param (
 
         [Parameter(Mandatory)]
+        [ValidateSet('Dell')]
         [string]
         $Make,
 
@@ -109,8 +110,11 @@ function Update-Model {
             $Package
         )
 
+        Push-Location ('{0}:' -f $SiteCode)
+
         Get-CMPackage -Name $Package.Name -Fast | Where-Object Version -EQ $Package.Version
         
+        Pop-Location
     }
 
     function clean_temp {
@@ -145,46 +149,11 @@ function Update-Model {
 
     $BIOS = Find-DellBIOS -Model $Model -DriverPackCatalog $DriverPackCatalog -CatalogPC $CatalogPC
 
-    $BIOSFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $BIOS.path) -Destination $WorkingDir -Hash $BIOS.hashMD5 -Algorithm MD5
-    $DriverFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $Driver.path) -Destination $WorkingDir -Hash $Drivers.hashMD5 -Algorithm MD5
-    $Flash64Zip = Get-RemoteFile -Url 'https://downloads.dell.com/FOLDER08405216M/1/Ver3.3.16.zip' -Destination $WorkingDir
-
-    $Flash64Extract = Expand-Archive -Path $Flash64Zip -DestinationPath $WorkingDir -PassThru | Where-Object Name -eq 'Flash64W.exe'
-
-    $ExtractedContent = extract $DriverFile
-
-    $Archive = compress $ExtractedContent
-
-    $DriverPath = (
-        $Make,
-        $Model,
-        'Driver',
-        $OSVersion,
-        $Driver.dellVersion
-    )
-
-    $DriverContent = path_creator $ContentShare $DriverPath
-
-    Copy-Item -Path $Archive -Destination $DriverContent
-
-    $BIOSPath = (
-        $Make,
-        $Model,
-        'BIOS',
-        $BIOS.dellVersion
-    )
-
-    $BIOSContent = path_creator $ContentShare $BIOSPath
-
-    Copy-Item -Path $BIOSFile -Destination $BIOSContent
-    Copy-Item -Path $Flash64Extract -Destination $BIOSContent
-
     $DriverPackage = @{
         Name = 'Drivers - {0} {1} - {2} {3}' -f $Make, $Model, $OSVersion, $Driver.SupportedOperatingSystems.OperatingSystem.osArch
         Version = $Driver.dellVersion
         Manufacturer = $Make
         Description = '(Models included:{0})' -f ($Driver.SupportedSystems.brand.model.systemID -join ';')
-        Path = $DriverContent
     }
 
     $BIOSPackage = @{
@@ -192,30 +161,53 @@ function Update-Model {
         Manufacturer = $Make
         Version = $BIOS.dellVersion
         Description = '(Models included:{0})' -f ($BIOS.SupportedSystems.Brand.Model.systemID -join ';')
-        Path = $BIOSContent
     }
 
     connect $SiteCode $SiteServerFQDN
 
-    Push-Location ('{0}:' -f $SiteCode)
-
     if (-not (check_site $DriverPackage)) {
-        $DriverCM = New-CMPackage @DriverPackage
-        $DriverCM | Move-CMObject -FolderPath ('{0}:\Package\Driver Packages\{1}' -f $SiteCode, $Make)
-        Set-CMPackage -InputObject $DriverCM -EnableBinaryDeltaReplication $true
+        $DriverFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $Driver.path) -Destination $WorkingDir -Hash $Drivers.hashMD5 -Algorithm MD5
 
-        Start-CMContentDistribution -InputObject $DriverCM -DistributionPointName $DistributionPoints
+        $ExtractedContent = extract $DriverFile
+
+        $Archive = compress $ExtractedContent
+
+        $DriverPath = (
+            $Make,
+            $Model,
+            'Driver',
+            $OSVersion,
+            $Driver.dellVersion
+        )
+
+        $DriverContent = path_creator $ContentShare $DriverPath
+
+        Copy-Item -Path $Archive -Destination $DriverContent
+
+        New-Package -Package $DriverPackage -Type 'Driver' -SiteCode $SiteCode -ContentPath $DriverContent -DistributionPoints $DistributionPoints -Make $Make
     }
 
     if (-not (check_site $BIOSPackage)) {
-        $BIOSCM = New-CMPackage @BIOSPackage
-        $BIOSCM | Move-CMObject -FolderPath ('{0}:\Package\BIOS Packages\{1}' -f $SiteCode, $Make)
-        Set-CMPackage -InputObject $BIOSCM -EnableBinaryDeltaReplication $true
 
-        Start-CMContentDistribution -InputObject $BIOSCM -DistributionPointName $DistributionPoints
+        $BIOSFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $BIOS.path) -Destination $WorkingDir -Hash $BIOS.hashMD5 -Algorithm MD5
+        $Flash64Zip = Get-RemoteFile -Url 'https://downloads.dell.com/FOLDER08405216M/1/Ver3.3.16.zip' -Destination $WorkingDir
+
+        $Flash64Extract = Expand-Archive -Path $Flash64Zip -DestinationPath $WorkingDir -PassThru | Where-Object Name -eq 'Flash64W.exe'
+
+        $BIOSPath = (
+            $Make,
+            $Model,
+            'BIOS',
+            $BIOS.dellVersion
+        )
+
+        $BIOSContent = path_creator $ContentShare $BIOSPath
+
+        Copy-Item -Path $BIOSFile -Destination $BIOSContent
+        Copy-Item -Path $Flash64Extract -Destination $BIOSContent
+
+        New-Package -Package $BIOSPackage -Type 'BIOS' -SiteCode $SiteCode -ContentPath $DriverContent -DistributionPoints $DistributionPoints -Make $Make
     }
-
-    Pop-Location
 
     clean_temp
 }
