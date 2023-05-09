@@ -12,7 +12,7 @@
 RootModule = 'OpenDriverTool.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.2'
+ModuleVersion = '0.1.3'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -98,10 +98,10 @@ PrivateData = @{
         # Tags = @()
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://github.com/w0/OpenDriverTool/blob/main/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/w0/OpenDriverTool'
 
         # A URL to an icon representing this module.
         # IconUri = ''

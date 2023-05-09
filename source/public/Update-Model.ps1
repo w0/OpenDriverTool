@@ -118,15 +118,20 @@ function Update-Model {
     }
 
     function clean_temp {
-        Remove-Item -Path $ExtractedContent -Recurse -Force
-        Remove-Item -Path $DriverFile -Force
-        Remove-Item -Path (Split-Path $Flash64Extract -Parent) -Recurse -Force
-        Remove-Item -Path $BIOSFile -Force
+        Get-ChildItem -Path $WorkingDir | Remove-Item -Recurse -Force
+    }
+
+    function Log() {
+        $input | ForEach-Object {
+            if (-not $NoHostOutput) { Write-Host $_ }
+        }
     }
 
     if (-not $WorkingDir) {
         $WorkingDir = path_creator $env:TEMP 'OpenDriverTool'
     }
+
+    "Updating $Make $Model" | Log
 
     path_creator $WorkingDir 'Content' | Out-Null
     
@@ -135,8 +140,12 @@ function Update-Model {
     $DriverPackCatalogUrl = $DellCatalog.Where( {$_.Filename -eq 'DriverPackCatalog.CAB'}, 'First' )
     $CatalogPCUrl      = $DellCatalog.Where( { $_.Filename -eq 'CatalogPC.cab'}, 'First' )
     
+
+    '  Getting Dell cabinet files...' | Log
+    '    Downloading: {0}' -f $DriverPackCatalogUrl.Url | Log
     $DriverPackCatalogCAB = $DriverPackCatalogUrl.Url | Get-RemoteFile -Destination $WorkingDir
 
+    '    Downloading: {0}' -f $CatalogPCUrl.Url | Log
     $CatalogPCCAB = $CatalogPCUrl.Url | Get-RemoteFile -Destination $WorkingDir
 
     Expand-Cab -Path $DriverPackCatalogCAB -Destination $WorkingDir\Content
@@ -146,8 +155,10 @@ function Update-Model {
     [xml] $CatalogPC = Get-Content -Path "$WorkingDir\Content\CatalogPC.xml"
 
     $Driver = Find-DellDrivers -DriverPackCatalog $DriverPackCatalog -Model $Model -OSVersion ($OSVersion -replace '\s', '')
+    '  Found Driver: {0}' -f $Driver.path| Log
 
     $BIOS = Find-DellBIOS -Model $Model -DriverPackCatalog $DriverPackCatalog -CatalogPC $CatalogPC
+    '  Found BIOS: {0}' -f $BIOS.path | Log
 
     $DriverPackage = @{
         Name = 'Drivers - {0} {1} - {2} {3}' -f $Make, $Model, $OSVersion, $Driver.SupportedOperatingSystems.OperatingSystem.osArch
@@ -165,11 +176,17 @@ function Update-Model {
 
     connect $SiteCode $SiteServerFQDN
 
-    if (-not (check_site $DriverPackage)) {
+    if (-not (check_site $DriverPackage) -and $Driver) {
+
+        "`n  Driver version not found in configmgr" | Log
+        
+        '    Downloading: {0}' -f $Driver.path  | Log
         $DriverFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $Driver.path) -Destination $WorkingDir -Hash $Drivers.hashMD5 -Algorithm MD5
 
+        '    Extracting: {0}' -f $DriverFile.FullName| Log
         $ExtractedContent = extract $DriverFile
 
+        '    Compressing driver package.'
         $Archive = compress $ExtractedContent
 
         $DriverPath = (
@@ -184,15 +201,26 @@ function Update-Model {
 
         Copy-Item -Path $Archive -Destination $DriverContent
 
+
+        '    Creating driver package in sccm.'
         New-Package -Package $DriverPackage -Type 'Driver' -SiteCode $SiteCode -ContentPath $DriverContent -DistributionPoints $DistributionPoints -Make $Make
+    } else {
+        '  Latest driver already in confimgr.' | Log
     }
 
-    if (-not (check_site $BIOSPackage)) {
+    if (-not (check_site $BIOSPackage) -and $BIOS) {
 
+        $Flash64Url = 'https://downloads.dell.com/FOLDER08405216M/1/Ver3.3.16.zip'
+
+        "`n  BIOS version not found in configmgr" | Log
+
+        '    Downloading: {0}' -f $BIOS.path | Log
         $BIOSFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $BIOS.path) -Destination $WorkingDir -Hash $BIOS.hashMD5 -Algorithm MD5
-        $Flash64Zip = Get-RemoteFile -Url 'https://downloads.dell.com/FOLDER08405216M/1/Ver3.3.16.zip' -Destination $WorkingDir
 
-        $Flash64Extract = Expand-Archive -Path $Flash64Zip -DestinationPath $WorkingDir -PassThru | Where-Object Name -eq 'Flash64W.exe'
+        '    Downloading: {0}' -f $Flash64Url | Log
+        $Flash64Zip = Get-RemoteFile -Url $Flash64Url -Destination $WorkingDir
+
+        $Flash64Extract = Expand-Archive -Path $Flash64Zip -DestinationPath $WorkingDir -Force -PassThru | Where-Object Name -eq 'Flash64W.exe'
 
         $BIOSPath = (
             $Make,
@@ -206,7 +234,10 @@ function Update-Model {
         Copy-Item -Path $BIOSFile -Destination $BIOSContent
         Copy-Item -Path $Flash64Extract -Destination $BIOSContent
 
-        New-Package -Package $BIOSPackage -Type 'BIOS' -SiteCode $SiteCode -ContentPath $DriverContent -DistributionPoints $DistributionPoints -Make $Make
+        '    Creating bios package in sccm.'
+        New-Package -Package $BIOSPackage -Type 'BIOS' -SiteCode $SiteCode -ContentPath $BIOSContent -DistributionPoints $DistributionPoints -Make $Make
+    } else {
+        '  Latest bios already in configmgr.' | Log
     }
 
     clean_temp
