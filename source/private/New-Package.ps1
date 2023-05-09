@@ -32,11 +32,11 @@ function New-Package {
     }
     
     process {
-        $Package = New-CMPackage @Package -Path $ContentPath
-        $Package | Move-CMObject -FolderPath ('{0}:\Package\{1} Packages\{2}' -f $SiteCode, $Type, $Make)
-        Set-CMPackage -InputObject $Package -EnableBinaryDeltaReplication $true
+        $CMPackage = New-CMPackage @Package -Path $ContentPath
+        $CMPackage | Move-CMObject -FolderPath ('{0}:\Package\{1} Packages\{2}' -f $SiteCode, $Type, $Make)
+        Set-CMPackage -InputObject $CMPackage -EnableBinaryDeltaReplication $true
 
-        Start-CMContentDistribution -InputObject $Package -DistributionPointName $DistributionPoints
+        Start-CMContentDistribution -InputObject $CMPackage -DistributionPointName $DistributionPoints
     }
     
     end {
