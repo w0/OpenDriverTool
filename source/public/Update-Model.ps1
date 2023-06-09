@@ -37,80 +37,13 @@ function Update-Model {
         $DistributionPoints
     )
 
-    function compress {
-        param (
-            $Content
-        )
-
-        $Child = Get-ChildItem $Content
-
-        Compress-Archive -Path $Child -DestinationPath $Content\DriverPackage.zip -PassThru
-
-    }
-
-    function path_creator {
-        param (
-            $Parent,
-            $Array
-        )
-
-        $Path =  Join-Path $Parent ($Array -join '\')
-
-        if (-not (Test-Path $Path)) {
-            New-Item $Path -ItemType Directory -ErrorAction SilentlyContinue
-            return
-        }
-
-        [io.directoryinfo] $Path
-    }
-
-    function connect {
-        param (
-            $SiteCode,
-            $SiteServerFQDN
-        )
-        
-        try {
-            Import-Module (Join-Path (Split-Path $env:SMS_ADMIN_UI_PATH -Parent) 'ConfigurationManager.psd1')
-        } catch {
-            throw 'The specified module ''ConfigurationManager'' was not loaded because no valid module file was found. Is the admin console installed?'
-        }
-
-        if (-not (Get-PSDrive -Name $SiteCode -ErrorAction SilentlyContinue)) {
-            New-PSDrive -Name $SiteCode -PSProvider "CMSite" -Root $SiteServerFQDN -Description "SCCM Site" | Out-Null
-        }
-
-    }
-
-    function check_site {
-        param (
-            $Package
-        )
-
-        Push-Location ('{0}:' -f $SiteCode)
-
-        Get-CMPackage -Name $Package.Name -Fast | Where-Object Version -EQ $Package.Version
-        
-        Pop-Location
-    }
-
-    function clean_temp {
-        Get-ChildItem -Path $WorkingDir | Remove-Item -Recurse -Force
-    }
-
-    function Log() {
-        $input | ForEach-Object {
-            if (-not $NoHostOutput) { Write-Host $_ }
-        }
-    }
-
     if (-not $WorkingDir) {
-        $WorkingDir = path_creator $env:TEMP 'OpenDriverTool'
+        $WorkingDir = Path-Creator -Parent $env:TEMP -Child 'OpenDriverTool'
     }
 
     "Updating $Make $Model" | Log
 
-    path_creator $WorkingDir 'Content' | Out-Null
+    Path-Creator -Parent $WorkingDir -Child 'Content' | Out-Null
     
     $DellCatalog = Get-DellCatalog
 
@@ -153,7 +86,7 @@ function Update-Model {
 
     Connect-SCCM -SiteCode $SiteCode -SiteServerFQDN $SiteServerFQDN
 
-    if (-not (check_site $DriverPackage) -and $Driver) {
+    if (-not (Confirm-ExistingPackage -Package $DriverPackage -SiteCode $SiteCode) -and $Driver) {
 
         "`n  Driver version not found in configmgr" | Log
         
@@ -164,7 +97,7 @@ function Update-Model {
         $ExtractedContent = Expand-Drivers -Make $Make -Path $DriverFile -Destination $WorkingDir
 
         '    Compressing driver package.'
-        $Archive = compress $ExtractedContent
+        $Archive = Compress-Drivers -ContentPath $ExtractedContent
 
         $DriverPath = (
             $Make,
@@ -174,7 +107,7 @@ function Update-Model {
             $Driver.dellVersion
         )
 
-        $DriverContent = path_creator $ContentShare $DriverPath
+        $DriverContent = Path-Creator -Parent $ContentShare -Child $DriverPath
 
         Copy-Item -Path $Archive -Destination $DriverContent
 
@@ -185,7 +118,7 @@ function Update-Model {
         '  Latest driver already in confimgr.' | Log
     }
 
-    if (-not (check_site $BIOSPackage) -and $BIOS) {
+    if (-not (Confirm-ExistingPackage -Package $BIOSPackage -SiteCode $SiteCode) -and $BIOS) {
 
         $Flash64Url = 'https://downloads.dell.com/FOLDER08405216M/1/Ver3.3.16.zip'
 
@@ -206,7 +139,7 @@ function Update-Model {
             $BIOS.dellVersion
         )
 
-        $BIOSContent = path_creator $ContentShare $BIOSPath
+        $BIOSContent = Path-Creator -Parent $ContentShare -Child $BIOSPath
 
         Copy-Item -Path $BIOSFile -Destination $BIOSContent
         Copy-Item -Path $Flash64Extract -Destination $BIOSContent
@@ -217,5 +150,5 @@ function Update-Model {
         '  Latest bios already in configmgr.' | Log
     }
 
-    clean_temp
+    Clean-Temp -Path $WorkingDir
 }
