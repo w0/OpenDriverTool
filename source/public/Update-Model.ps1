@@ -151,7 +151,7 @@ function Update-Model {
         Description = '(Models included:{0})' -f ($BIOS.SupportedSystems.Brand.Model.systemID -join ';')
     }
 
-    connect $SiteCode $SiteServerFQDN
+    Connect-SCCM -SiteCode $SiteCode -SiteServerFQDN $SiteServerFQDN
 
     if (-not (check_site $DriverPackage) -and $Driver) {
 
