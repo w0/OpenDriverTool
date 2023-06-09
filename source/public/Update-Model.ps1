@@ -37,29 +37,6 @@ function Update-Model {
         $DistributionPoints
     )
 
-    function extract {
-        param (
-            $DriverFile
-        )
-
-        $ExtractDir = Join-Path $WorkingDir (New-Guid).Guid
-
-        New-Item $ExtractDir -ItemType Directory -ErrorAction Stop | Out-Null
-
-        switch ($DriverFile.Extension) {
-            '.exe' {
-                Start-Process -FilePath $DriverFile -ArgumentList ('/s /e="{0}"' -f $ExtractDir) -Wait; break
-            }
-            '.cab' {
-                Expand-Cab -Path $DriverFile -Destination $ExtractDir; break
-            }
-            default { throw 'unhandled file extension {0}. unable to extract drivers.' -f $_ }
-        }
-
-        $ExtractDir
-
-    }
-
     function compress {
         param (
             $Content
@@ -184,7 +161,7 @@ function Update-Model {
         $DriverFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $Driver.path) -Destination $WorkingDir -Hash $Drivers.hashMD5 -Algorithm MD5
 
         '    Extracting: {0}' -f $DriverFile.FullName| Log
-        $ExtractedContent = extract $DriverFile
+        $ExtractedContent = Expand-Drivers -Make $Make -Path $DriverFile -Destination $WorkingDir
 
         '    Compressing driver package.'
         $Archive = compress $ExtractedContent
