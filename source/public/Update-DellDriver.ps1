@@ -27,9 +27,17 @@ function Update-DellDriver {
         [string]
         $SiteServerFQDN,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [ValidateNotNullOrEmpty()]
         [string[]]
-        $DistributionPoints
+        $DistributionPoints,
+
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $DistributionPointGroups
     )
 
     if (-not $WorkingDir) {
@@ -91,7 +99,13 @@ function Update-DellDriver {
 
 
         '    Creating driver package in sccm.'
-        New-Package -Package $DriverPackage -Type 'Driver' -SiteCode $SiteCode -ContentPath $DriverContent -DistributionPoints $DistributionPoints -Make 'Dell'
+        $CMPackage = New-Package -Package $DriverPackage -Type 'Driver' -SiteCode $SiteCode -ContentPath $DriverContent -Make 'Dell'
+
+        switch ($PSBoundParameters.Keys) {
+            'DistributionPoints'      { Start-ContentDistribution -CMPackage $CMPackage -SiteCode $SiteCode -DistributionPoints $DistributionPoints }
+            'DistributionPointGroups' { Start-ContentDistribution -CMPackage $CMPackage -SiteCode $SiteCode -DistributionPointGroups $DistributionPointGroups }
+        }
+
     } else {
         '  Latest driver already in confimgr.' | Log
     }

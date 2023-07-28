@@ -37,9 +37,17 @@ function Update-Model {
         [string]
         $SiteServerFQDN,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [ValidateNotNullOrEmpty()]
         [string[]]
-        $DistributionPoints
+        $DistributionPoints,
+
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $DistributionPointGroups
     )
 
     if (-not $WorkingDir) {
@@ -55,7 +63,6 @@ function Update-Model {
         ContentShare = $ContentShare
         SiteCode = $SiteCode
         SiteServerFQDN = $SiteServerFQDN
-        DistributionPoints = $DistributionPoints
     }
 
     $Bios = @{
@@ -64,7 +71,16 @@ function Update-Model {
         ContentShare = $ContentShare
         SiteCode = $SiteCode
         SiteServerFQDN = $SiteServerFQDN
-        DistributionPoints = $DistributionPoints
+    }
+
+    if ($DistributionPoints) {
+        $Driver.Add('DistributionPoints', $DistributionPoints)
+        $Bios.Add('DistributionPoints', $DistributionPoints)
+    }
+
+    if ($DistributionPointGroups) {
+        $Driver.Add('DistributionPointGroup', $DistributionPointGroups)
+        $Bios.Add('DistributionPointGroup', $DistributionPointGroups)
     }
 
     switch ($Make) {

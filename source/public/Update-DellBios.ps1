@@ -22,9 +22,17 @@ function Update-DellBios {
         [string]
         $SiteServerFQDN,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [ValidateNotNullOrEmpty()]
         [string[]]
-        $DistributionPoints
+        $DistributionPoints,
+
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $DistributionPointGroups
     )
 
     if (-not $WorkingDir) {
@@ -93,7 +101,13 @@ function Update-DellBios {
         Copy-Item -Path $Flash64Extract -Destination $BIOSContent
 
         '    Creating bios package in sccm.'
-        New-Package -Package $BIOSPackage -Type 'BIOS' -SiteCode $SiteCode -ContentPath $BIOSContent -DistributionPoints $DistributionPoints -Make $Make
+        $CMPackage = New-Package -Package $BIOSPackage -Type 'BIOS' -SiteCode $SiteCode -ContentPath $BIOSContent -Make $Make
+
+        switch ($PSBoundParameters.Keys) {
+            'DistributionPoints'      { Start-ContentDistribution -CMPackage $CMPackage -SiteCode $SiteCode -DistributionPoints $DistributionPoints }
+            'DistributionPointGroups' { Start-ContentDistribution -CMPackage $CMPackage -SiteCode $SiteCode -DistributionPointGroups $DistributionPointGroups }
+        }
+
     } else {
         '  Latest bios already in configmgr.' | Log
     }
