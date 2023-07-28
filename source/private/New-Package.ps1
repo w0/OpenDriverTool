@@ -20,11 +20,7 @@ function New-Package {
 
         [Parameter(Mandatory)]
         [string]
-        $SiteCode,
-        
-        [Parameter(Mandatory)]
-        [string[]]
-        $DistributionPoints
+        $SiteCode
     )
     
     begin {
@@ -36,7 +32,7 @@ function New-Package {
         $CMPackage | Move-CMObject -FolderPath ('{0}:\Package\{1} Packages\{2}' -f $SiteCode, $Type, $Make)
         Set-CMPackage -InputObject $CMPackage -EnableBinaryDeltaReplication $true
 
-        Start-CMContentDistribution -InputObject $CMPackage -DistributionPointName $DistributionPoints
+        $CMPackage
     }
     
     end {
