@@ -24,13 +24,13 @@ GUID = 'e4538f4d-d8a1-4ba2-8e61-ed33c1183202'
 Author = 'w0'
 
 # Company or vendor of this module
-CompanyName = 'Unknown'
+CompanyName = 'w0'
 
 # Copyright statement for this module
 Copyright = 'w0 2023'
 
 # Description of the functionality provided by this module
-# Description = ''
+Description = 'Automate the creation of driver and bios packages in configmgr.'
 
 # Minimum version of the PowerShell engine required by this module
 # PowerShellVersion = ''
@@ -95,7 +95,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+        Tags = @( 'Drivers', 'Bios', 'ConfigMgr', 'SCCM' )
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/w0/OpenDriverTool/blob/main/LICENSE'
