@@ -1,12 +1,8 @@
 @{
     ModuleManifest  = "OpenDriverTool.psd1"
     # Subsequent relative paths are to the ModuleManifest
-    OutputDirectory = "../"
+    OutputDirectory = "../dist"
     VersionedOutputDirectory = $true
-    SourceDirectories = @(
-        'public'
-        'private'
-        'classes'
-        'enum'
-    )
+    SourceDirectories = @( 'public', 'private', 'classes', 'enum' )
+    CopyDirectories = @( '../en-US' )
 }

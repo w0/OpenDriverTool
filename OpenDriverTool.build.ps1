@@ -1,6 +1,7 @@
 
 $RequiredModules = @{
     ModuleBuilder = 3.0
+    platyPS = 0.14.2
 }
 
 task CheckModules -Before Build {
@@ -17,11 +18,15 @@ task CheckModules -Before Build {
 }
 
 task Clean -Before Build {
-    remove Output
+    remove dist
+}
+
+task BuildHelp -Before Build {
+    New-ExternalHelp .\docs -OutputPath en-US\
 }
 
 task Build {
-    Build-Module
+    Build-Module .\source -Passthru
 }
 
 task . Build
