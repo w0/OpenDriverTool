@@ -33,7 +33,7 @@ Copyright = 'w0 2023'
 Description = 'Automate the creation of driver and bios packages in configmgr.'
 
 # Minimum version of the PowerShell engine required by this module
-# PowerShellVersion = ''
+PowerShellVersion = '7.1'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
