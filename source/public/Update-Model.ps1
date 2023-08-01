@@ -3,7 +3,7 @@ function Update-Model {
     param (
 
         [Parameter(Mandatory)]
-        [ValidateSet('Dell')]
+        [ValidateSet('Dell', 'Microsoft')]
         [string]
         $Make,
 
@@ -92,6 +92,10 @@ function Update-Model {
             if ($DownloadType -eq 'Bios' -or $DownloadType -eq 'Both') {
                 Update-DellBios @Bios
             }
+        }
+
+        'Microsoft' {
+            Update-MicrosoftDriver @Driver
         }
     }
 
