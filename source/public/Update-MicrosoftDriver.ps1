@@ -61,7 +61,7 @@ function Update-MicrosoftDriver {
     '  Found Driver: {0}' -f $Driver.FileName | Log
 
     $DriverPackage = @{
-        Name = 'Drivers - {0} {1} - {2}' -f 'Microsoft', $Model, $OSVersion, $Driver.OSVersion
+        Name = 'Drivers - {0} {1} - {2}' -f 'Microsoft', $Model, $Driver.OSVersion
         Version = ($Driver.FileName -split '_' | Select-Object -last 1).trim('.msi')
         Manufacturer = 'Microsoft'
         Description = '(Models included:{0})' -f $Driver.Product
@@ -96,7 +96,7 @@ function Update-MicrosoftDriver {
 
 
         '    Creating driver package in sccm.'
-        $CMPackage = New-Package -Package $DriverPackage -Type 'Driver' -SiteCode $SiteCode -ContentPath $DriverContent -Make 'Dell'
+        $CMPackage = New-Package -Package $DriverPackage -Type 'Driver' -SiteCode $SiteCode -ContentPath $DriverContent -Make 'Microsoft'
 
         switch ($PSBoundParameters.Keys) {
             'DistributionPoints'      { Start-ContentDistribution -CMPackage $CMPackage -SiteCode $SiteCode -DistributionPoints $DistributionPoints }
