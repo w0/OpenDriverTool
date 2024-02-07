@@ -19,6 +19,7 @@ task CheckModules -Before Build {
 
 task Clean -Before Build {
     remove dist
+    remove en-US
 }
 
 task BuildHelp -Before Build {
@@ -27,6 +28,14 @@ task BuildHelp -Before Build {
 
 task Build {
     Build-Module .\source -Passthru
+}
+
+task Publish {
+    $PublishModule = @{
+        Path = "$BuildRoot\Output\turbo-tribble"
+        NuGetApiKey = $env:NUGET_API_KEY
+    }
+    Publish-Module @PublishModule
 }
 
 task . Build
