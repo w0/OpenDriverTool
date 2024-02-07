@@ -32,7 +32,7 @@ task Build {
 
 task Publish {
     $PublishModule = @{
-        Path = "$BuildRoot\Output\OpenDriverTool"
+        Path = "$BuildRoot\dist\OpenDriverTool"
         NuGetApiKey = $env:NUGET_API_KEY
     }
     Publish-Module @PublishModule
