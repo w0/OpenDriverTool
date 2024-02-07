@@ -47,14 +47,12 @@ function Update-DellDriver {
     "Updating drivers for Dell $Model" | Log
 
     Path-Creator -Parent $WorkingDir -Child 'Content' | Out-Null
-    
-    $DellCatalog = Get-DellCatalog
 
-    $DriverPackCatalogUrl = $DellCatalog.Where( {$_.Filename -eq 'DriverPackCatalog.CAB'}, 'First' )
+    $DriverPackCatalogUrl = 'https://downloads.dell.com/catalog/DriverPackCatalog.CAB'
 
     '  Getting Dell cabinet files...' | Log
-    '    Downloading: {0}' -f $DriverPackCatalogUrl.Url | Log
-    $DriverPackCatalogCAB = $DriverPackCatalogUrl.Url | Get-RemoteFile -Destination $WorkingDir
+    '    Downloading: {0}' -f $DriverPackCatalogUrl | Log
+    $DriverPackCatalogCAB = $DriverPackCatalogUrl | Get-RemoteFile -Destination $WorkingDir
 
     Expand-Cab -Path $DriverPackCatalogCAB -Destination $WorkingDir\Content
 

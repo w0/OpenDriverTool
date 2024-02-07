@@ -42,19 +42,17 @@ function Update-DellBios {
     "Updating Bios for Dell $Model" | Log
 
     Path-Creator -Parent $WorkingDir -Child 'Content' | Out-Null
-    
-    $DellCatalog = Get-DellCatalog
 
-    $DriverPackCatalogUrl = $DellCatalog.Where( {$_.Filename -eq 'DriverPackCatalog.CAB'}, 'First' )
-    $CatalogPCUrl      = $DellCatalog.Where( { $_.Filename -eq 'CatalogPC.cab'}, 'First' )
+    $DriverPackCatalogUrl = 'https://downloads.dell.com/catalog/DriverPackCatalog.CAB'
+    $CatalogPCUrl         = 'https://downloads.dell.com/catalog/CatalogPC.cab'
     
 
     '  Getting Dell cabinet files...' | Log
-    '    Downloading: {0}' -f $DriverPackCatalogUrl.Url | Log
-    $DriverPackCatalogCAB = $DriverPackCatalogUrl.Url | Get-RemoteFile -Destination $WorkingDir
+    '    Downloading: {0}' -f $DriverPackCatalogUrl | Log
+    $DriverPackCatalogCAB = $DriverPackCatalogUrl | Get-RemoteFile -Destination $WorkingDir
 
-    '    Downloading: {0}' -f $CatalogPCUrl.Url | Log
-    $CatalogPCCAB = $CatalogPCUrl.Url | Get-RemoteFile -Destination $WorkingDir
+    '    Downloading: {0}' -f $CatalogPCUrl | Log
+    $CatalogPCCAB = $CatalogPCUrl | Get-RemoteFile -Destination $WorkingDir
 
     Expand-Cab -Path $DriverPackCatalogCAB -Destination $WorkingDir\Content
     Expand-Cab -Path $CatalogPCCAB -Destination $WorkingDir\Content
