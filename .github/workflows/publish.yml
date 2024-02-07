@@ -1,0 +1,31 @@
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+        # Checkout the main branch
+    - uses: actions/checkout@main
+    
+    - name: Install Modules
+      shell: pwsh
+      run: |
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        Install-Module InvokeBuild
+    
+    - name: Invoke Build
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      shell: pwsh
+      run: Invoke-Build Build, Publish
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        name: module-artifact # Naming the powershell module artifact
+        path: ./Output/ # Saving the powershell module artifact to the path ./Output/
+        
