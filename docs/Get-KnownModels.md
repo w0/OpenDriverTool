@@ -24,7 +24,7 @@ The `Get-KnownModels` cmdlet will return an array models from the configuration 
 
 ### Example 1
 ```powershell
-PS C:\> Get-KNownModels -Make Dell -SiteCode CAS -SiteServerFQDN 'abc.contoso.com'
+PS C:\> Get-KnownModels -Make Dell -SiteCode CAS -SiteServerFQDN 'abc.contoso.com'
 ```
 
 Get all known Dell models from the specified configuration manager site.
