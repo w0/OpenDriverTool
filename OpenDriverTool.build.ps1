@@ -32,7 +32,7 @@ task Build {
 
 task Publish {
     $PublishModule = @{
-        Path = "$BuildRoot\Output\turbo-tribble"
+        Path = "$BuildRoot\Output\OpenDriverTool"
         NuGetApiKey = $env:NUGET_API_KEY
     }
     Publish-Module @PublishModule
