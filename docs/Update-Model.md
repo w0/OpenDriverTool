@@ -16,21 +16,29 @@ Controller script to assist with automating the usage of the manufactuer specifi
 ```
 Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
  [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String> -SiteServerFQDN <String>
- -DistributionPoints <String[]> -DistributionPointGroups <String[]> [<CommonParameters>]
-```
-
-### DistributionPoints
-```
-Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
- [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String> -SiteServerFQDN <String>
- -DistributionPoints <String[]> [<CommonParameters>]
+ -DistributionPoints <String[]> -DistributionPointGroups <String[]> [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### DistributionPointGroups
 ```
 Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
- [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String> -SiteServerFQDN <String>
- -DistributionPointGroups <String[]> [<CommonParameters>]
+ [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -DistributionPointGroups <String[]>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+### DownloadOnly
+```
+Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
+ [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> [-DownloadOnly]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+### DistributionPoints
+```
+Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
+ [-WorkingDir <DirectoryInfo>] -SiteCode <String> -SiteServerFQDN <String> -DistributionPoints <String[]>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -54,8 +62,8 @@ Specifies the path of the content. The site system server requires permission to
 
 ```yaml
 Type: DirectoryInfo
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: PointAndGroup, DistributionPointGroups, DownloadOnly
+Aliases: Destination
 
 Required: True
 Position: Named
@@ -162,7 +170,7 @@ Specify the sitecode of the confimgr site to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: PointAndGroup, DistributionPoints
 Aliases:
 
 Required: True
@@ -177,7 +185,7 @@ Specify the site server fqdn to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: PointAndGroup, DistributionPoints
 Aliases:
 
 Required: True
@@ -194,6 +202,36 @@ A local or network location used when downloading content.
 Type: DirectoryInfo
 Parameter Sets: (All)
 Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DownloadOnly
+Downloads only the file specified in DownloadType to the ContentShare.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: DownloadOnly
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
 
 Required: False
 Position: Named

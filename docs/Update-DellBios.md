@@ -16,19 +16,26 @@ Downloads and creates a configmgr standard package containing the latest Bios up
 ```
 Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String>
  -SiteServerFQDN <String> -DistributionPoints <String[]> -DistributionPointGroups <String[]>
- [<CommonParameters>]
-```
-
-### DistributionPoints
-```
-Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String>
- -SiteServerFQDN <String> -DistributionPoints <String[]> [<CommonParameters>]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### DistributionPointGroups
 ```
 Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String>
- -SiteServerFQDN <String> -DistributionPointGroups <String[]> [<CommonParameters>]
+ -SiteServerFQDN <String> -DistributionPointGroups <String[]> [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
+```
+
+### DownloadOnly
+```
+Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> [-DownloadOnly]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+### DistributionPoints
+```
+Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -DistributionPoints <String[]>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -52,8 +59,8 @@ Specifies the path of the content. The site system server requires permission to
 
 ```yaml
 Type: DirectoryInfo
-Parameter Sets: (All)
-Aliases:
+Parameter Sets: PointAndGroup, DistributionPointGroups, DownloadOnly
+Aliases: Destination
 
 Required: True
 Position: Named
@@ -112,7 +119,7 @@ Specify the sitecode of the confimgr site to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: PointAndGroup, DistributionPointGroups
 Aliases:
 
 Required: True
@@ -127,7 +134,7 @@ Specify the site server fqdn to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: PointAndGroup, DistributionPointGroups
 Aliases:
 
 Required: True
@@ -144,6 +151,36 @@ A local or network location used when downloading content.
 Type: DirectoryInfo
 Parameter Sets: (All)
 Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DownloadOnly
+Only downloads the BIOS update to the specified ContentShare. Does not create a package in configmgr.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: DownloadOnly
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
 
 Required: False
 Position: Named
