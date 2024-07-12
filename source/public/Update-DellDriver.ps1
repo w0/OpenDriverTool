@@ -15,15 +15,23 @@ function Update-DellDriver {
         [io.directoryInfo]
         $WorkingDir,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DownloadOnly')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [Alias('Destination')]
         [io.directoryInfo]
         $ContentShare,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteCode,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteServerFQDN,
 
@@ -37,7 +45,11 @@ function Update-DellDriver {
         [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [ValidateNotNullOrEmpty()]
         [string[]]
-        $DistributionPointGroups
+        $DistributionPointGroups,
+
+        [Parameter(Mandatory, ParameterSetName = 'DownloadOnly')]
+        [switch]
+        $DownloadOnly
     )
 
     if (-not $WorkingDir) {
@@ -59,6 +71,11 @@ function Update-DellDriver {
     [xml] $DriverPackCatalog = Get-Content -Path "$WorkingDir\Content\DriverPackCatalog.xml"
 
     $Driver = Find-DellDrivers -DriverPackCatalog $DriverPackCatalog -Model $Model -OSVersion ($OSVersion -replace '\s', '')
+
+    if (-not $Driver) {
+        Write-Error "Failed to find a driver. Verify that the name of the model is correct and a pack is published for $OSVersion" -ErrorAction Stop
+    } 
+
     '  Found Driver: {0}' -f $Driver.path | Log
 
     $DriverPackage = @{
@@ -68,10 +85,17 @@ function Update-DellDriver {
         Description = '(Models included:{0})' -f ($Driver.SupportedSystems.brand.model.systemID -join ';')
     }
 
-    Connect-SCCM -SiteCode $SiteCode -SiteServerFQDN $SiteServerFQDN
+    if ($PSCmdlet.ParameterSetName -ne 'DownloadOnly') {
+        Connect-SCCM -SiteCode $SiteCode -SiteServerFQDN $SiteServerFQDN
+        $ExistingPackage = Confirm-ExistingPackage -Package $DriverPackage -SiteCode $SiteCode
+    }
 
-    if (-not (Confirm-ExistingPackage -Package $DriverPackage -SiteCode $SiteCode) -and $Driver) {
+    if ($ExistingPackage) {
+        '  Latest driver already in configmgr.' | Log
+        return
+    }
 
+    if ($PSCmdlet.ParameterSetName -ne 'DownloadOnly') {
         "`n  Driver version not found in configmgr" | Log
         
         '    Downloading: {0}' -f $Driver.path  | Log
@@ -104,7 +128,17 @@ function Update-DellDriver {
             'DistributionPointGroups' { Start-ContentDistribution -CMPackage $CMPackage -SiteCode $SiteCode -DistributionPointGroups $DistributionPointGroups }
         }
 
-    } else {
-        '  Latest driver already in confimgr.' | Log
     }
+
+    if ($PSCmdlet.ParameterSetName -eq 'DownloadOnly') {
+        if (-not (Test-Path $ContentShare)) {
+            New-Item -Path $ContentShare -ItemType Directory | Out-Null
+        }
+
+        '    Downloading: {0}' -f $Driver.path  | Log
+        $DriverFile = Get-RemoteFile -Url ('{0}/{1}' -f 'https://downloads.dell.com', $Driver.path) -Destination $ContentShare -Hash $Drivers.hashMD5 -Algorithm MD5
+
+        '  Downloaded: {0}' -f $DriverFile.FullName | Log
+    }
+
 }

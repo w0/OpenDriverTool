@@ -15,18 +15,26 @@ function Update-MicrosoftDriver {
         [io.directoryInfo]
         $WorkingDir,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DownloadOnly')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [Alias('Destination')]
         [io.directoryInfo]
         $ContentShare,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteCode,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteServerFQDN,
-
+  
         [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
         [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [ValidateNotNullOrEmpty()]
@@ -37,7 +45,11 @@ function Update-MicrosoftDriver {
         [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [ValidateNotNullOrEmpty()]
         [string[]]
-        $DistributionPointGroups
+        $DistributionPointGroups,
+        
+        [Parameter(Mandatory, ParameterSetName = 'DownloadOnly')]
+        [switch]
+        $DownloadOnly
     )
     
     if (-not $WorkingDir) {
@@ -46,17 +58,13 @@ function Update-MicrosoftDriver {
 
     "Updating drivers for Microsoft $Model" | Log
 
-    Path-Creator -Parent $WorkingDir -Child 'Content' | Out-Null
-
     '  Checking catalog for available driver.' | Log
     
     $Driver = Find-MicrosoftDriver -Model $Model -OSVersion $OSVersion
 
     if (-not $Driver) {
-        '  Unable to find a driver for the specified model.' | Log
-        '  Please reference https://raw.githubusercontent.com/OSDeploy/OSD/master/Catalogs/MicrosoftDriverPackCatalog.json for "Product" models.' | Log
-        return
-    }
+        Write-Error -Message 'Unable to find a driver for the specified model. Please reference https://raw.githubusercontent.com/OSDeploy/OSD/master/Catalogs/MicrosoftDriverPackCatalog.json for "Product" models.' -ErrorAction Stop
+    } 
 
     '  Found Driver: {0}' -f $Driver.FileName | Log
 
@@ -67,9 +75,17 @@ function Update-MicrosoftDriver {
         Description = '(Models included:{0})' -f $Driver.Product
     }
 
-    Connect-SCCM -SiteCode $SiteCode -SiteServerFQDN $SiteServerFQDN
+    if ($PSCmdlet.ParameterSetName -ne 'DownloadOnly') {
+        Connect-SCCM -SiteCode $SiteCode -SiteServerFQDN $SiteServerFQDN
+        $ExistingPackage = Confirm-ExistingPackage -Package $DriverPackage -SiteCode $SiteCode
+    }
+
+    if ($ExistingPackage) {
+        '  Latest driver already in configmgr.' | Log
+        return
+    }
     
-    if (-not (Confirm-ExistingPackage -Package $DriverPackage -SiteCode $SiteCode) -and $Driver) {
+    if ($PSCmdlet.ParameterSetName -ne 'DownloadOnly') {
 
         "`n  Driver version not found in configmgr" | Log
         
@@ -103,7 +119,17 @@ function Update-MicrosoftDriver {
             'DistributionPointGroups' { Start-ContentDistribution -CMPackage $CMPackage -SiteCode $SiteCode -DistributionPointGroups $DistributionPointGroups }
         }
 
-    } else {
-        '  Latest driver already in confimgr.' | Log
+    } 
+
+    if ($PSCmdlet.ParameterSetName -eq 'DownloadOnly') {
+        if (-not (Test-Path $ContentShare)) {
+            New-Item -Path $ContentShare -ItemType Directory | Out-Null
+        }
+
+        '    Downloading: {0}' -f $Driver.FileName  | Log
+        $DriverFile = Get-RemoteFile -Url $Driver.Url -Destination $ContentShare
+
+        '  Downloaded: {0}' -f $DriverFile.FullName | Log
     }
+
 }

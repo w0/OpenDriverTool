@@ -25,15 +25,23 @@ function Update-Model {
         [io.directoryInfo]
         $WorkingDir,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DownloadOnly')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
+        [Alias('Destination')]
         [io.directoryInfo]
         $ContentShare,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteCode,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
+        [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteServerFQDN,
 
@@ -47,7 +55,11 @@ function Update-Model {
         [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [ValidateNotNullOrEmpty()]
         [string[]]
-        $DistributionPointGroups
+        $DistributionPointGroups,
+
+        [Parameter(Mandatory, ParameterSetName = 'DownloadOnly')]
+        [switch]
+        $DownloadOnly
     )
 
     if (-not $WorkingDir) {
@@ -61,16 +73,22 @@ function Update-Model {
         OSVersion = $OSVersion
         WorkingDir = $WorkingDir
         ContentShare = $ContentShare
-        SiteCode = $SiteCode
-        SiteServerFQDN = $SiteServerFQDN
     }
 
     $Bios = @{
         Model = $Model
         WorkingDir = $WorkingDir
         ContentShare = $ContentShare
-        SiteCode = $SiteCode
-        SiteServerFQDN = $SiteServerFQDN
+    }
+
+    if ($PSCmdlet.ParameterSetName -eq 'DownloadOnly') {
+        $Driver.Add('DownloadOnly', $true)
+        $Bios.Add('DownloadOnly', $true)
+    } else {
+        $Driver.Add('SiteCode', $SiteCode)
+        $Driver.Add('SiteServerFQDN', $SiteServerFQDN)
+        $Bios.Add('SiteCode', $SiteCode)
+        $Bios.Add('SiteServerFQDN', $SiteServerFQDN)
     }
 
     if ($DistributionPoints) {
