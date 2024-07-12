@@ -12,17 +12,20 @@ function Update-DellBios {
 
         [Parameter(Mandatory, ParameterSetName = 'DownloadOnly')]
         [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
         [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [Alias('Destination')]
         [io.directoryInfo]
         $ContentShare,
 
         [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
         [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteCode,
 
         [Parameter(Mandatory, ParameterSetName = 'DistributionPointGroups')]
+        [Parameter(Mandatory, ParameterSetName = 'DistributionPoints')]
         [Parameter(Mandatory, ParameterSetName = 'PointAndGroup')]
         [string]
         $SiteServerFQDN,

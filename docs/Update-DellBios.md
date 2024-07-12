@@ -19,6 +19,13 @@ Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <Dir
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
+### DistributionPoints
+```
+Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String>
+ -SiteServerFQDN <String> -DistributionPoints <String[]> [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
+```
+
 ### DistributionPointGroups
 ```
 Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String>
@@ -29,12 +36,6 @@ Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <Dir
 ### DownloadOnly
 ```
 Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> [-DownloadOnly]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
-```
-
-### DistributionPoints
-```
-Update-DellBios -Model <String> [-WorkingDir <DirectoryInfo>] -DistributionPoints <String[]>
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -59,7 +60,7 @@ Specifies the path of the content. The site system server requires permission to
 
 ```yaml
 Type: DirectoryInfo
-Parameter Sets: PointAndGroup, DistributionPointGroups, DownloadOnly
+Parameter Sets: (All)
 Aliases: Destination
 
 Required: True
@@ -119,7 +120,7 @@ Specify the sitecode of the confimgr site to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: PointAndGroup, DistributionPointGroups
+Parameter Sets: PointAndGroup, DistributionPoints, DistributionPointGroups
 Aliases:
 
 Required: True
@@ -134,7 +135,7 @@ Specify the site server fqdn to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: PointAndGroup, DistributionPointGroups
+Parameter Sets: PointAndGroup, DistributionPoints, DistributionPointGroups
 Aliases:
 
 Required: True

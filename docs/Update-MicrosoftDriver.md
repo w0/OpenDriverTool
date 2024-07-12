@@ -19,6 +19,13 @@ Update-MicrosoftDriver -Model <String> -OSVersion <String> [-WorkingDir <Directo
  -DistributionPointGroups <String[]> [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
+### DistributionPoints
+```
+Update-MicrosoftDriver -Model <String> -OSVersion <String> [-WorkingDir <DirectoryInfo>]
+ -ContentShare <DirectoryInfo> -SiteCode <String> -SiteServerFQDN <String> -DistributionPoints <String[]>
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
 ### DistributionPointGroups
 ```
 Update-MicrosoftDriver -Model <String> -OSVersion <String> [-WorkingDir <DirectoryInfo>]
@@ -30,12 +37,6 @@ Update-MicrosoftDriver -Model <String> -OSVersion <String> [-WorkingDir <Directo
 ```
 Update-MicrosoftDriver -Model <String> -OSVersion <String> [-WorkingDir <DirectoryInfo>]
  -ContentShare <DirectoryInfo> [-DownloadOnly] [-ProgressAction <ActionPreference>] [<CommonParameters>]
-```
-
-### DistributionPoints
-```
-Update-MicrosoftDriver -Model <String> -OSVersion <String> [-WorkingDir <DirectoryInfo>]
- -DistributionPoints <String[]> [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -59,7 +60,7 @@ Specifies the path of the content. The site system server requires permission to
 
 ```yaml
 Type: DirectoryInfo
-Parameter Sets: PointAndGroup, DistributionPointGroups, DownloadOnly
+Parameter Sets: (All)
 Aliases: Destination
 
 Required: True
@@ -135,7 +136,7 @@ Specify the sitecode of the confimgr site to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: PointAndGroup, DistributionPointGroups
+Parameter Sets: PointAndGroup, DistributionPoints, DistributionPointGroups
 Aliases:
 
 Required: True
@@ -150,7 +151,7 @@ Specify the site server fqdn to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: PointAndGroup, DistributionPointGroups
+Parameter Sets: PointAndGroup, DistributionPoints, DistributionPointGroups
 Aliases:
 
 Required: True

@@ -20,24 +20,24 @@ Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <
  [<CommonParameters>]
 ```
 
+### DistributionPoints
+```
+Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
+ [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String> -SiteServerFQDN <String>
+ -DistributionPoints <String[]> [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
 ### DistributionPointGroups
 ```
 Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
- [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -DistributionPointGroups <String[]>
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> -SiteCode <String> -SiteServerFQDN <String>
+ -DistributionPointGroups <String[]> [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### DownloadOnly
 ```
 Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
  [-WorkingDir <DirectoryInfo>] -ContentShare <DirectoryInfo> [-DownloadOnly]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
-```
-
-### DistributionPoints
-```
-Update-Model -Make <String> -Model <String> -OSVersion <String> [-DownloadType <String>]
- [-WorkingDir <DirectoryInfo>] -SiteCode <String> -SiteServerFQDN <String> -DistributionPoints <String[]>
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -62,7 +62,7 @@ Specifies the path of the content. The site system server requires permission to
 
 ```yaml
 Type: DirectoryInfo
-Parameter Sets: PointAndGroup, DistributionPointGroups, DownloadOnly
+Parameter Sets: (All)
 Aliases: Destination
 
 Required: True
@@ -170,7 +170,7 @@ Specify the sitecode of the confimgr site to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: PointAndGroup, DistributionPoints
+Parameter Sets: PointAndGroup, DistributionPoints, DistributionPointGroups
 Aliases:
 
 Required: True
@@ -185,7 +185,7 @@ Specify the site server fqdn to connect to.
 
 ```yaml
 Type: String
-Parameter Sets: PointAndGroup, DistributionPoints
+Parameter Sets: PointAndGroup, DistributionPoints, DistributionPointGroups
 Aliases:
 
 Required: True
