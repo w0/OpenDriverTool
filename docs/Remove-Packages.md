@@ -24,10 +24,10 @@ Remove-Packages [-Make] <String> [-PackageType] <String> [-SiteCode] <String> [-
 
 ### Example 1
 ```powershell
-PS C:\> {{ Add example code here }}
+PS C:\> Remove-Packages -Make Dell -PackageType Driver -SiteCode CAS -SiteServerFQDN abc.contoso.com
 ```
 
-{{ Add example description here }}
+Will remove all old driver packages from the specified sccm site. It leaves only the latest driver package.
 
 ## PARAMETERS
 
